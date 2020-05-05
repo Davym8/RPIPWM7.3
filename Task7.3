@@ -1,0 +1,67 @@
+import RPi.GPIO as GPIO
+import time
+GPIO.setmode(GPIO.BCM)
+
+#set sensors
+TRIG = 18
+ECHO = 24 
+LED = 3
+buzzer = 4
+
+GPIO.setup(TRIG,GPIO.OUT)
+GPIO.setup(ECHO,GPIO.IN)
+GPIO.setup(buzzer, GPIO.OUT)
+GPIO.setup(LED, GPIO.OUT)
+
+pwm_buzzer = GPIO.PWM(buzzer, 60)
+pwm_buzzer.start(0)
+
+pwm_led = GPIO.PWM(LED, 100)
+pwm_led.start(100)
+max_distance = 100
+
+def clamp(n, minn, maxx):
+    return max(min(maxx,n), minn)
+
+
+print ("Measurement In progress")
+try: 
+    while True:
+        GPIO.output(TRIG, False)
+        print ("Updating Sensor")
+        time.sleep(2)
+        
+        GPIO.output(TRIG, True)
+        time.sleep(0.00001)
+        GPIO.output(TRIG, False)
+        
+        while GPIO.input(ECHO)== 0:
+            pulse_start = time.time()
+            
+        while GPIO.input(ECHO)== 1:
+            pulse_end = time.time()
+            
+        pulse_duration = pulse_end - pulse_start
+        distance = pulse_duration * 17150
+        distance = round(distance,2)
+        dist = (pulse_duration * 34300) / 2
+        
+        clampval = clamp(dist/max_distance,0,1)        
+        LedDutyCycle = (1 - clampval) * 100
+        pwm_led.ChangeDutyCycle(LedDutyCycle)
+        
+        pwm_buzzer.ChangeDutyCycle(LedDutyCycle)
+        
+        #if distance < 15:
+         #   GPIO.output(buzzer,GPIO.HIGH)            
+          #  print("Buzzer and Light On")
+           # time.sleep(0.5)
+        #else:
+         #   GPIO.output(buzzer,GPIO.LOW)            
+          #  print("Buzzer and Light Off")
+                   
+        print ("Distance is: ",distance,"cm")
+except KeyboardInterrupt:
+    pwm_buzzer.stop()
+    GPIO.cleanup()
+    
